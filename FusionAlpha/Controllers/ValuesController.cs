@@ -25,9 +25,9 @@ namespace FusionAlpha.Controllers
         }
 
         // GET api/values/5
-        public string Get(int id)
+        public Patient Get(int id)
         {
-            return "value";
+            return this._repo.Get(id);
         }
 
         // POST api/values

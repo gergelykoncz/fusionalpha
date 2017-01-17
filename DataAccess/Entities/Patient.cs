@@ -8,5 +8,6 @@ namespace DataAccess.Entities
         public DateTime? BirthDate { get; set; }
         public Gender Gender { get; set; }
         public int SSN { get; set; }
+        public string Name { get; set; }
     }
 }

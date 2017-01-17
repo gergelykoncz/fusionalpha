@@ -26,12 +26,29 @@ namespace DataAccess.Mappers
             }
         }
 
+        private bool hasColumn(DbDataReader reader, string columName)
+        {
+            try
+            {
+                reader.GetOrdinal(columName);
+            }
+            catch
+            {
+                return false;
+            }
+            return true;
+        }
+
         public Patient Map(DbDataReader reader)
         {
             var patient = new Patient();
             patient.ID = parseStringToInt(reader["Patient_ID"].ToString());
             patient.SSN = parseStringToInt(reader["SSN"].ToString());
             patient.BirthDate = parseDbDateTime(reader, "birth_date");
+            if (hasColumn(reader, "fname") && hasColumn(reader, "lname"))
+            {
+                patient.Name = string.Format("{0} {1}", reader["fname"], reader["lname"]);
+            }
 
             string gender = reader["gender_cd"].ToString();
             if (gender == null)
