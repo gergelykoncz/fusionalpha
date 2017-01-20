@@ -1,4 +1,5 @@
 ﻿using DataAccess.Entities;
+using DataAccess.Mappers;
 using DataAccess.Repository;
 using System;
 using System.Collections.Generic;
@@ -7,9 +8,11 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Web.Http;
+using System.Web.Http.Cors;
 
 namespace FusionAlpha.Controllers
 {
+    [EnableCors("*", "*", "*")]
     public class ValuesController : ApiController
     {
         private readonly IRepository<Patient> _repo;

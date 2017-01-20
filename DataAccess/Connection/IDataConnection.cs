@@ -1,10 +1,10 @@
-﻿using System;
-using System.Data.Common;
+﻿using NHibernate;
+using System;
 
 namespace DataAccess.Connection
 {
     public interface IDataConnection : IDisposable
     {
-        DbConnection Connection { get; }
+        ISession Connection { get; }
     }
 }

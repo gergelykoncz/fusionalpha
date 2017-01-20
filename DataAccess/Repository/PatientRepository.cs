@@ -1,62 +1,60 @@
 ﻿using DataAccess.Connection;
 using DataAccess.Entities;
 using DataAccess.Mappers;
+using NHibernate;
 using Oracle.ManagedDataAccess.Client;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace DataAccess.Repository
 {
     public class PatientRepository : IRepository<Patient>
     {
         private readonly IDataConnection _dataConnection;
-        private readonly ISqlPatientMapper _patientMapper;
 
-        public PatientRepository(IDataConnection dataConnection,
-            ISqlPatientMapper patientMapper)
+        public PatientRepository(IDataConnection dataConnection)
         {
             this._dataConnection = dataConnection;
-            this._patientMapper = patientMapper;
         }
 
         public Patient Get(int id)
         {
-            var command = this._dataConnection.Connection.CreateCommand();
-            command.CommandText = @"SELECT p.Patient_ID, p.SSN, p.Birth_Date, p.Gender_cd,
-                                    pn.fname, pn.lname
-                                    FROM Patient p
-                                    JOIN Patient_Name pn 
-                                    ON p.Patient_Id=pn.Patient_Id 
-                                    AND pn.SeqNo=0 
-                                    WHERE p.Patient_Id=:ID";
-            var idParameter = new OracleParameter("ID", id);
-            command.Parameters.Add(idParameter);
-
-            var reader = command.ExecuteReader();
-            reader.Read();
-            return this._patientMapper.Map(reader); 
+            return this._dataConnection.Connection.QueryOver<Patient>()
+                .Where(x => x.PatientId == id.ToString())
+                .SingleOrDefault();
         }
-
+        
         public IEnumerable<Patient> GetAll()
         {
-            var result = new List<Patient>();
-            var command = this._dataConnection.Connection.CreateCommand();
-            command.CommandText = "SELECT * FROM Patient WHERE RowNum < 20";
-            var reader = command.ExecuteReader();
-            while (reader.Read())
-            {
-                var patient = this._patientMapper.Map(reader);
-                result.Add(patient);
-
-            }
-            return result.AsEnumerable();
+            return this._dataConnection.Connection.QueryOver<Patient>()
+                .Take(20)
+                .List();
+                
         }
 
-        public IEnumerable<Patient> GetBy(Func<Patient, bool> criteria)
+        public IEnumerable<Patient> GetBy(Expression<Func<Patient, bool>> criteria)
         {
-            throw new NotImplementedException();
+            return this._dataConnection.Connection.QueryOver<Patient>()
+                .Where(criteria)
+                .List();
+        }
+
+        public void Add(Patient patient)
+        {
+            var session = this._dataConnection.Connection;
+
+            var transaction = session.BeginTransaction();
+            session.Lock(patient, LockMode.Upgrade);
+
+            patient.PatientNames.Add(new PatientName() { FName = "Bob" });
+            session.Save(patient);
+            session.Flush();
+
+            transaction.Commit();
+
         }
     }
 }

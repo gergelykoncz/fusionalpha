@@ -1,12 +1,13 @@
-﻿using Oracle.ManagedDataAccess.Client;
-using System.Data.Common;
-using System.Data;
+﻿using DataAccess.Mappers;
+using NHibernate;
+using NHibernate.Cfg;
+using NHibernate.Mapping.ByCode;
 
 namespace DataAccess.Connection
 {
     public class DataConnection : IDataConnection
     {
-        private DbConnection _connection;
+        private ISession _connection;
         private readonly string _connectionString;
 
         public DataConnection(string connectionString)
@@ -14,24 +15,34 @@ namespace DataAccess.Connection
             this._connectionString = connectionString;
         }
 
-        public DbConnection Connection
+        public ISession Connection
         {
             get
             {
                 if (_connection == null)
                 {
-                    _connection = new OracleConnection(this._connectionString);
-                    _connection.Open();
+                    var cfg = new Configuration();
+                    var mapper = new ModelMapper();
+                    mapper.AddMapping(typeof(PatientMap));
+                    mapper.AddMapping(typeof(PatientNameMap));
+
+                    cfg.DataBaseIntegration(c =>
+                    {
+                        c.ConnectionString = this._connectionString;
+
+                        c.Driver<NHibernate.Driver.OracleManagedDataClientDriver>();
+                        c.Dialect<NHibernate.Dialect.Oracle10gDialect>();
+                    });
+                    cfg.AddMapping(mapper.CompileMappingForAllExplicitlyAddedEntities());
+                    _connection = cfg.BuildSessionFactory().OpenSession();
                 }
                 return _connection;
-
             }
         }
 
         public void Dispose()
         {
-            if (this._connection != null &&
-                this._connection.State == ConnectionState.Open)
+            if (this._connection != null)
             {
                 this._connection.Close();
             }
